@@ -35,10 +35,10 @@ type CardResponse struct {
 
 type CardRequest struct {
     CardholderName string `json:"cardholder_name" validate:"required,min=1,max=100"`
-    CardNumber     string `json:"card_number" validate:"required,creditcard"`
+    CardNumber     string `json:"card_number" validate:"required,min=13,max=19,numeric"`
     ExpiryMonth    int    `json:"expiry_month" validate:"required,min=1,max=12"`
     ExpiryYear     int    `json:"expiry_year" validate:"required,min=2024"`
-    CVV            string `json:"cvv" validate:"required,len=3"`
+    CVV            string `json:"cvv" validate:"required,min=3,max=4,numeric"`
 }
 
 type BatchUpdateRequest struct {
