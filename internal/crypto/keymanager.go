@@ -2,8 +2,6 @@ package crypto
 
 import (
     "crypto/rand"
-    "encoding/hex"
-    "fmt"
     "sync"
     "time"
 )
@@ -17,7 +15,7 @@ type KeyManager struct {
 }
 
 func NewKeyManager() *KeyManager {
-    key := make([]byte, 32) // 256 bits for AES-256
+    key := make([]byte, 32)
     rand.Read(key)
     
     return &KeyManager{

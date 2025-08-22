@@ -88,6 +88,63 @@ func (s *cardService) GetCard(cardID, userID uuid.UUID) (*models.CardResponse, e
     return s.toCardResponse(card, decryptedNumber), nil
 }
 
+func (s *cardService) GetUserCards(userID uuid.UUID) ([]models.CardResponse, error) {
+    cards, err := s.repo.GetAllByUserID(userID)
+    if err != nil {
+        return nil, fmt.Errorf("failed to get user cards: %w", err)
+    }
+
+    responses := make([]models.CardResponse, len(cards))
+    for i, card := range cards {
+        decryptedNumber, err := s.decryptCardNumber(&card)
+        if err != nil {
+            return nil, fmt.Errorf("failed to decrypt card data: %w", err)
+        }
+        responses[i] = *s.toCardResponse(&card, decryptedNumber)
+    }
+
+    return responses, nil
+}
+
+func (s *cardService) UpdateCard(cardID, userID uuid.UUID, req *models.CardRequest) (*models.CardResponse, error) {
+    card, err := s.repo.GetByID(cardID, userID)
+    if err != nil {
+        return nil, fmt.Errorf("card not found: %w", err)
+    }
+
+    cardNumber := strings.ReplaceAll(req.CardNumber, " ", "")
+    if !s.isValidCardNumber(cardNumber) {
+        return nil, errors.New("invalid card number")
+    }
+
+    encryptedNumber, err := s.encSvc.Encrypt(cardNumber)
+    if err != nil {
+        return nil, fmt.Errorf("failed to encrypt card number: %w", err)
+    }
+
+    encryptedCVV, err := s.encSvc.Encrypt(req.CVV)
+    if err != nil {
+        return nil, fmt.Errorf("failed to encrypt CVV: %w", err)
+    }
+
+    card.CardholderName = req.CardholderName
+    card.CardNumber = encryptedNumber
+    card.ExpiryMonth = req.ExpiryMonth
+    card.ExpiryYear = req.ExpiryYear
+    card.CVV = encryptedCVV
+    card.CardType = s.detectCardType(cardNumber)
+
+    if err := s.repo.Update(card); err != nil {
+        return nil, fmt.Errorf("failed to update card: %w", err)
+    }
+
+    return s.toCardResponse(card, cardNumber), nil
+}
+
+func (s *cardService) DeleteCard(cardID, userID uuid.UUID) error {
+    return s.repo.Delete(cardID, userID)
+}
+
 func (s *cardService) BatchUpdateCards(userID uuid.UUID, req *models.BatchUpdateRequest) ([]models.BatchUpdateResponse, error) {
     responses := make([]models.BatchUpdateResponse, len(req.Cards))
     var wg sync.WaitGroup
@@ -138,7 +195,6 @@ func (s *cardService) BatchUpdateCards(userID uuid.UUID, req *models.BatchUpdate
 }
 
 func (s *cardService) RotateKeys() ([]models.BatchUpdateResponse, error) {
-
     cards, err := s.repo.GetAllCards()
     if err != nil {
         return nil, fmt.Errorf("failed to get cards: %w", err)
@@ -159,7 +215,6 @@ func (s *cardService) RotateKeys() ([]models.BatchUpdateResponse, error) {
     oldEncSvc, _ := crypto.NewEncryptionService(oldKey)
 
     for i, card := range cards {
-        // Descifrar con clave anterior
         cardNumber, err := oldEncSvc.Decrypt(card.CardNumber)
         if err != nil {
             responses[i] = models.BatchUpdateResponse{
@@ -226,7 +281,6 @@ func (s *cardService) RotateKeys() ([]models.BatchUpdateResponse, error) {
     return responses, nil
 }
 
-//Aux methods
 func (s *cardService) isValidCardNumber(cardNumber string) bool {
     var sum int
     alternate := false
