@@ -103,7 +103,7 @@ DELETE /api/v1/cards/{card_id}
 
 #### Batch Update Cards
 ```http
-POST /api/v1/cards/batch-update
+PATCH /api/v1/cards/batch-update
 Content-Type: application/json
 
 {
@@ -325,4 +325,5 @@ curl -X POST http://localhost:8080/api/v1/admin/cards/rotate-keys \
 - Containerization with Docker
 
 ---
+
 
