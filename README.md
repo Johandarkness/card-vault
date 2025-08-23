@@ -72,7 +72,7 @@ Content-Type: application/json
 }
 ```
 
-#### Get User Cards
+#### Get All Users Cards
 ```http
 GET /api/v1/cards
 ```
@@ -325,3 +325,4 @@ curl -X POST http://localhost:8080/api/v1/admin/cards/rotate-keys \
 - Containerization with Docker
 
 ---
+
