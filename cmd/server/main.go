@@ -69,7 +69,7 @@ func main() {
             cards.GET("/:id", cardHandler.GetCard)
             cards.PUT("/:id", cardHandler.UpdateCard)
             cards.DELETE("/:id", cardHandler.DeleteCard)
-            cards.POST("/batch-update", cardHandler.BatchUpdateCards)
+            cards.PATCH("/batch-update", cardHandler.BatchUpdateCards)
         }
 
         // Endpoint administrativo para rotación de claves
